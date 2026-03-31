@@ -251,6 +251,128 @@ GROUP BY year(date_added)
 ORDER BY year(date_added);
 
 
+-- Apply Database Normalization
+
+-- Creating actors table
+CREATE TABLE actors (
+    actor_id INT AUTO_INCREMENT PRIMARY KEY,
+    actor_name VARCHAR(255)
+);
+
+INSERT INTO actors (actor_name)
+SELECT DISTINCT TRIM(SUBSTRING_INDEX(SUBSTRING_INDEX(cast, ',', numbers.n), ',', -1)) AS actor
+FROM netflix
+JOIN (
+    SELECT 1 n UNION SELECT 2 UNION SELECT 3 UNION SELECT 4 UNION SELECT 5
+) numbers
+ON CHAR_LENGTH(cast) - CHAR_LENGTH(REPLACE(cast, ',', '')) >= numbers.n - 1;
+
+select * from actors;
+
+ALTER TABLE netflix
+ADD PRIMARY KEY (show_id);
+
+DESCRIBE netflix;
+
+-- Creating mapping table
+CREATE TABLE show_actors (
+    show_id VARCHAR(20),
+    actor_id INT,
+    FOREIGN KEY (show_id) REFERENCES netflix(show_id),
+    FOREIGN KEY (actor_id) REFERENCES actors(actor_id)
+);
+
+INSERT INTO show_actors (show_id, actor_id)
+SELECT 
+n.show_id,
+a.actor_id
+FROM netflix n
+JOIN actors a 
+ON FIND_IN_SET(a.actor_name, n.cast)
+WHERE n.show_id BETWEEN 's1' AND 's1000';
+
+
+-- Creating Genres table
+
+CREATE TABLE genres (
+    genre_id INT AUTO_INCREMENT PRIMARY KEY,
+    genre_name VARCHAR(100)
+);
+
+INSERT INTO genres (genre_name)
+SELECT DISTINCT TRIM(SUBSTRING_INDEX(SUBSTRING_INDEX(listed_in, ',', numbers.n), ',', -1))
+FROM netflix
+JOIN (
+    SELECT 1 n UNION SELECT 2 UNION SELECT 3 UNION SELECT 4 UNION SELECT 5
+) numbers
+ON CHAR_LENGTH(listed_in) - CHAR_LENGTH(REPLACE(listed_in, ',', '')) >= numbers.n - 1;
+
+
+-- Creating Mapping table
+
+CREATE TABLE show_genres (
+    show_id VARCHAR(20),
+    genre_id INT,
+    FOREIGN KEY (show_id) REFERENCES netflix(show_id),
+    FOREIGN KEY (genre_id) REFERENCES genres(genre_id)
+);
+
+INSERT INTO show_genres (show_id, genre_id)
+SELECT 
+n.show_id,
+g.genre_id
+FROM netflix n
+JOIN genres g
+ON FIND_IN_SET(g.genre_name, n.listed_in);
+
+
+
+-- Creating country table
+
+CREATE TABLE countries (
+    country_id INT AUTO_INCREMENT PRIMARY KEY,
+    country_name VARCHAR(100)
+);
+
+INSERT INTO countries (country_name)
+SELECT DISTINCT TRIM(SUBSTRING_INDEX(SUBSTRING_INDEX(country, ',', numbers.n), ',', -1))
+FROM netflix
+JOIN (
+    SELECT 1 n UNION SELECT 2 UNION SELECT 3 UNION SELECT 4 UNION SELECT 5
+) numbers
+ON CHAR_LENGTH(country) - CHAR_LENGTH(REPLACE(country, ',', '')) >= numbers.n - 1
+WHERE country IS NOT NULL;
+
+
+-- Creating mapping table
+
+CREATE TABLE show_countries (
+    show_id VARCHAR(20),
+    country_id INT,
+    FOREIGN KEY (show_id) REFERENCES netflix(show_id),
+    FOREIGN KEY (country_id) REFERENCES countries(country_id)
+);
+
+INSERT INTO show_countries (show_id, country_id)
+SELECT 
+n.show_id,
+c.country_id
+FROM netflix n
+JOIN countries c
+ON FIND_IN_SET(c.country_name, n.country);
+
+select * from countries;
+
+
+
+
+SELECT a.actor_name, COUNT(sa.show_id) AS total_shows
+FROM actors a
+JOIN show_actors sa ON a.actor_id = sa.actor_id
+GROUP BY a.actor_name
+ORDER BY total_shows DESC;
+
+
 
 
 
